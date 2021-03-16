@@ -12,7 +12,10 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
-mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true, useUnifiedTopology: true});  //useNewUrlParser: true is used for avoiding the deprecation warning
+mongoose.connect("mongodb://localhost:27017/todolistDB", {
+  useNewUrlParser: true, 
+  useUnifiedTopology: true
+});  //useNewUrlParser: true is used for avoiding the deprecation warning
 const itemsSchema = {
   name: String 
 };
@@ -78,12 +81,39 @@ app.post("/delete", function(req, res){
 
 });
 
-app.get("/work", function(req,res){
-  res.render("list", {listTitle: "Work List", newListItems: workItems});
+
+app.get('/list', function(req,res){
+  res.render('list', {})
 });
 
 app.get("/about", function(req, res){
   res.render("about");
+});
+
+app.get('/:customListName', function(req,res){
+  const customListName = req.params.customListName;
+
+  List.findOne({name : customListName}, function(err, foundList){
+    if(!err){
+      if (!foundList){
+        console.log("data doesn't exist");
+        // create new list
+        const list = new List({
+          name: customListName,
+          items: defaultItems
+        });
+      
+        list.save();
+      } else {
+        console.log('the searched data exist in the mongoDB');
+        // show the existing list
+        res.render('list', {listTitle: foundList.name, newListItems: foundList.items})
+      }
+    } else {
+      console.log(err);
+    }
+  });
+  
 });
 
 app.listen(3000, function() {
